@@ -7,15 +7,17 @@ from engines.llm_engine import chat_recommendation, route_recommendation
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # allow local Angular dev by default
+CORS(app)
 
 @app.post("/api/chat")
 def api_chat():
     data = request.get_json(force=True)
     loc = data["location"]      # {lat, lon}
     prompt = data.get("prompt", "")
-    summary = chat_recommendation(loc, prompt)
-    return jsonify({"summary": summary})
+    radius_m = int(data.get("radius_m", 3000))
+
+    result = chat_recommendation(loc, prompt, radius_m=radius_m)
+    return jsonify({"summary": result})
 
 @app.post("/api/route")
 def api_route():
@@ -23,8 +25,9 @@ def api_route():
     start = data["start"]       # {lat, lon}
     end = data["end"]           # {lat, lon}
     prompt = data.get("prompt", "")
-    summary = route_recommendation(start, end, prompt)
-    return jsonify({"summary": summary})
+
+    result = route_recommendation(start, end, prompt)
+    return jsonify({"summary": result})
 
 if __name__ == "__main__":
     host = os.getenv("FLASK_HOST", "0.0.0.0")
