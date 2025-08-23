@@ -4,7 +4,7 @@ from services.geocoding import NominatimGeocoder
 from services.pois import OverpassPOI
 from services.routing import RoutingService
 from engines.abstract_engine import BaseGeoCopilotEngine
-from config.config_loader import combined_rules
+from config.config_loader import combined_rules, default_user_prompt
 
 LatLon = Tuple[float, float]
 
@@ -53,6 +53,8 @@ class RouteEngine(BaseGeoCopilotEngine):
         }
 
     def run(self, start: LatLon, end: LatLon, user_prompt: str) -> str:
+        if not user_prompt or not user_prompt.strip():
+            user_prompt = default_user_prompt("route")
         facts = self._build_facts(start, end)
         if facts.get("error") == "no_route":
             return "No drivable route was found between the selected points."

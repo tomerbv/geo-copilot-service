@@ -21,5 +21,10 @@
       "Summarize total distance/time and which provider was used.",
       "Mention a few notable via areas/POIs and add practical driving tips."
     ]
+  },
+
+  "default_user_prompts": {
+    "chat": "Give me a helpful summary of this location.",
+    "route": "Give me a helpful summary of this route."
   }
 }
