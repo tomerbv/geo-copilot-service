@@ -1,33 +1,33 @@
 from typing import Tuple, Dict, List, Optional
-from services.llm import OllamaLLMService
+from services.llm import LLMService
 from services.geocoding import NominatimGeocoder
 from services.pois import OverpassPOI
 from services.routing import OSRMRouting, ORSRouting
+from engines.abstract_engine import BaseGeoCopilotEngine
 
 LatLon = Tuple[float, float]
 
-class RouteEngine:
+class RouteEngine(BaseGeoCopilotEngine):
     def __init__(
         self,
         geocoder: NominatimGeocoder,
         poi: OverpassPOI,
         router: OSRMRouting | ORSRouting,
-        llm: OllamaLLMService,
+        llm: LLMService,
         *,
-        system_prompt: Optional[str] = None,
+        prompt_rules: list[str] | None = None,
     ):
+        engine_rules = [
+            "You receive a computed driving route with via places and nearby POIs.",
+            "Summarize total distance/time and which provider was used.",
+            "Mention a few notable via areas/POIs and add practical driving tips.",
+        ]
+        super().__init__(llm, prompt_rules=(prompt_rules or []) + engine_rules)
         self._geocoder = geocoder
         self._poi = poi
         self._router = router
-        self._llm = llm
-        self.system_prompt = system_prompt or (
-            "You are GeoCopilot, a travel agent that provides traveling tips and planning services. "
-            "You receive a computed route with names and nearby POIs. "
-            "Summarize the drive (distance/time/provider), notable via areas/POIs, and a few tips. English only."
-        )
 
-    @staticmethod
-    def _bbox(points: List[LatLon]):
+    def _bbox(self, points: List[LatLon]):
         lats = [p[0] for p in points]; lons = [p[1] for p in points]
         return min(lats), min(lons), max(lats), max(lons)
 
@@ -68,4 +68,4 @@ class RouteEngine:
         facts = self._build_facts(start, end, user_prompt)
         if facts.get("error") == "no_route":
             return "No drivable route was found between the selected points."
-        return self._llm.summarize(self.system_prompt, facts)
+        return self._generate(facts)

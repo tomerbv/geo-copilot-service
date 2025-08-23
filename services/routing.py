@@ -15,18 +15,46 @@ class OSRMRouting:
         pts = polyline.decode(rt["geometry"])
         return {"distance_m": float(rt["distance"]), "duration_s": float(rt["duration"]), "points": pts, "provider": "osrm"}
 
+
 class ORSRouting:
     def __init__(self, *, api_key: Optional[str] = None):
         self.api_key = api_key or os.getenv("ORS_API_KEY", "")
+
     def route(self, start: LatLon, end: LatLon) -> Optional[Dict]:
-        if not self.api_key: return None
-        body = {"coordinates": [[start[1], start[0]], [end[1], end[0]]]}
-        r = requests.post("https://api.openrouteservice.org/v2/directions/driving-car",
-                          json=body, headers={"Authorization": self.api_key}, timeout=30)
+        if not self.api_key:
+            return None
+
+        body = {
+            "coordinates": [[start[1], start[0]], [end[1], end[0]]],
+            "instructions": False  # we don't need step-by-step; keeps response small
+        }
+
+        url = "https://api.openrouteservice.org/v2/directions/driving-car/geojson"
+        r = requests.post(url, json=body, headers={"Authorization": self.api_key}, timeout=30)
         r.raise_for_status()
         j = r.json()
+
         feat = j["features"][0]
-        coords = feat["geometry"]["coordinates"]   # [[lon,lat], ...]
-        seg = feat["properties"]["segments"][0]
-        pts = [(lat, lon) for lon, lat in coords]
-        return {"distance_m": float(seg["distance"]), "duration_s": float(seg["duration"]), "points": pts, "provider": "ors"}
+        props = feat.get("properties", {})
+        geom = feat.get("geometry", {}) or {}
+        coords = geom.get("coordinates", [])  # [[lon, lat], ...]
+
+        # Prefer segments[0] if present; otherwise fallback to summary
+        segs = props.get("segments")
+        if segs and isinstance(segs, list) and segs:
+            dist = float(segs[0].get("distance", 0.0))
+            dur = float(segs[0].get("duration", 0.0))
+        else:
+            summ = props.get("summary", {}) or {}
+            dist = float(summ.get("distance", 0.0))
+            dur = float(summ.get("duration", 0.0))
+
+        # Convert to (lat, lon) tuples
+        pts: List[LatLon] = [(lat, lon) for lon, lat in coords]
+
+        return {
+            "distance_m": dist,
+            "duration_s": dur,
+            "points": pts,
+            "provider": "ors",
+        }
