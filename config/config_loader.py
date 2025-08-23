@@ -3,17 +3,15 @@ import json, os
 from typing import Dict, List, Any
 
 def _load_config() -> Dict[str, Any]:
-    # Path: CONFIG_FILE env or default to config/config.json
     path = os.getenv("CONFIG_FILE") or os.path.join(os.path.dirname(__file__), "config.json")
     if not os.path.exists(path):
-        return {"USE_ORS": 0, "prompts": {"base": [], "chat": [], "route": []}}
+        return {"USE_ORS": False, "prompts": {"base": [], "chat": [], "route": []}}
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        # minimal normalization
         prompts = data.get("prompts", {})
         return {
-            "USE_ORS": data.get("USE_ORS", 0),
+            "USE_ORS": bool(data.get("USE_ORS", False)),
             "prompts": {
                 "base": list(prompts.get("base", [])),
                 "chat": list(prompts.get("chat", [])),
@@ -21,23 +19,21 @@ def _load_config() -> Dict[str, Any]:
             },
         }
     except Exception:
-        return {"USE_ORS": 0, "prompts": {"base": [], "chat": [], "route": []}}
+        return {"USE_ORS": False, "prompts": {"base": [], "chat": [], "route": []}}
 
 _CFG = _load_config()
 
 def get_flag(name: str, default: Any = None) -> Any:
-    """Read a config flag, allowing ENV override if present."""
-    # ENV takes precedence if set explicitly
+    # ENV takes precedence if set
     if name in os.environ:
         v = os.getenv(name)
         if v is None:
             return default
-        # try int/bool parsing for convenience
-        if v.isdigit():
-            return int(v)
-        if v.lower() in {"true", "false"}:
-            return v.lower() == "true"
-        return v
+        if v.lower() in {"true", "1", "yes"}:
+            return True
+        if v.lower() in {"false", "0", "no"}:
+            return False
+        return v  # fallback as string
     return _CFG.get(name, default)
 
 def base_rules() -> List[str]:
