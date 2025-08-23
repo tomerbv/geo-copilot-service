@@ -18,19 +18,20 @@ class ChatEngine:
         self._poi = poi
         self._llm = llm
         self.system_prompt = system_prompt or (
-            "You are GeoCopilot. You receive a verified location and nearby POIs. "
+            "You are GeoCopilot, a travel agent that provides traveling tips and planning services. "
+            "You receive a verified location and nearby POIs. "
+            "If no search radius was specified by the user the default search value is 3000 meters. "
             "Write a compact, helpful summary and a few practical tips. English only."
         )
 
-    def _build_facts(self, loc: LatLon, radius_m: int, user_prompt: str) -> Dict:
+    def _build_facts(self, loc: LatLon, user_prompt: str) -> Dict:
         lat, lon = loc
         return {
             "location": self._geocoder.reverse(lat, lon),
-            "radius_m": radius_m,
-            "pois": self._poi.around(lat, lon, radius_m, 30),
+            "pois": self._poi.around(lat, lon, 30),
             "user_prompt": user_prompt,
         }
 
-    def run(self, loc: LatLon, radius_m: int, user_prompt: str) -> str:
-        facts = self._build_facts(loc, radius_m, user_prompt)
+    def run(self, loc: LatLon, user_prompt: str) -> str:
+        facts = self._build_facts(loc, user_prompt)
         return self._llm.summarize(self.system_prompt, facts)

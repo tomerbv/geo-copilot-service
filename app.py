@@ -12,8 +12,7 @@ manager = EngineManager()
 def api_chat():
     data = request.get_json(force=True)
     loc = (data["location"]["lat"], data["location"]["lon"])
-    radius_m = int(data.get("radius_m", 3000))
-    txt = manager.chat.run(loc, radius_m, data.get("prompt", ""))
+    txt = manager.chat.run(loc, data.get("prompt", ""))
     return jsonify({"summary": txt})
 
 @app.post("/api/route")

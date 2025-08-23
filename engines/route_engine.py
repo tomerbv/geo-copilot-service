@@ -21,7 +21,8 @@ class RouteEngine:
         self._router = router
         self._llm = llm
         self.system_prompt = system_prompt or (
-            "You are GeoCopilot. You receive a computed route with names and nearby POIs. "
+            "You are GeoCopilot, a travel agent that provides traveling tips and planning services. "
+            "You receive a computed route with names and nearby POIs. "
             "Summarize the drive (distance/time/provider), notable via areas/POIs, and a few tips. English only."
         )
 

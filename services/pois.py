@@ -2,16 +2,17 @@ import os, requests
 from typing import List, Dict, Optional
 
 class OverpassPOI:
-    def __init__(self, *, url: Optional[str] = None):
+    def __init__(self, *, url: Optional[str] = None, radius_m: Optional[int] = None):
         self.url = url or os.getenv("OVERPASS_URL", "https://overpass-api.de/api/interpreter")
+        self.radius_m = radius_m or os.getenv("POI_RADIUS_METERS", 3000)
 
-    def around(self, lat: float, lon: float, radius_m: int, limit: int) -> List[Dict]:
+    def around(self, lat: float, lon: float, limit: int) -> List[Dict]:
         q = f"""
         [out:json][timeout:25];
         (
-          node["tourism"~"attraction|viewpoint|museum"](around:{radius_m},{lat},{lon});
-          node["amenity"~"fuel|restaurant|cafe"](around:{radius_m},{lat},{lon});
-          node["natural"~"beach|peak|spring"](around:{radius_m},{lat},{lon});
+          node["tourism"~"attraction|viewpoint|museum"](around:{self.radius_m},{lat},{lon});
+          node["amenity"~"fuel|restaurant|cafe"](around:{self.radius_m},{lat},{lon});
+          node["natural"~"beach|peak|spring"](around:{self.radius_m},{lat},{lon});
         );
         out center {limit};
         """
