@@ -1,9 +1,9 @@
-from typing import List, Dict
-import requests
+import os, requests
+from typing import List, Dict, Optional
 
 class OverpassPOI:
-    def __init__(self, url: str):
-        self.url = url
+    def __init__(self, *, url: Optional[str] = None):
+        self.url = url or os.getenv("OVERPASS_URL", "https://overpass-api.de/api/interpreter")
 
     def around(self, lat: float, lon: float, radius_m: int, limit: int) -> List[Dict]:
         q = f"""

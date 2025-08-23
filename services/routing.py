@@ -1,5 +1,5 @@
-from typing import Optional, Tuple, Dict
-import requests, polyline
+import os, requests, polyline
+from typing import Optional, Tuple, Dict, List
 
 LatLon = Tuple[float, float]
 
@@ -16,8 +16,8 @@ class OSRMRouting:
         return {"distance_m": float(rt["distance"]), "duration_s": float(rt["duration"]), "points": pts, "provider": "osrm"}
 
 class ORSRouting:
-    def __init__(self, api_key: str):
-        self.api_key = api_key
+    def __init__(self, *, api_key: Optional[str] = None):
+        self.api_key = api_key or os.getenv("ORS_API_KEY", "")
     def route(self, start: LatLon, end: LatLon) -> Optional[Dict]:
         if not self.api_key: return None
         body = {"coordinates": [[start[1], start[0]], [end[1], end[0]]]}
@@ -26,7 +26,7 @@ class ORSRouting:
         r.raise_for_status()
         j = r.json()
         feat = j["features"][0]
-        coords = feat["geometry"]["coordinates"]
+        coords = feat["geometry"]["coordinates"]   # [[lon,lat], ...]
         seg = feat["properties"]["segments"][0]
         pts = [(lat, lon) for lon, lat in coords]
         return {"distance_m": float(seg["distance"]), "duration_s": float(seg["duration"]), "points": pts, "provider": "ors"}

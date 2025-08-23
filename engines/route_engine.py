@@ -1,4 +1,3 @@
-import os
 from typing import Tuple, Dict, List, Optional
 from services.llm import OllamaLLMService
 from services.geocoding import NominatimGeocoder
@@ -10,33 +9,21 @@ LatLon = Tuple[float, float]
 class RouteEngine:
     def __init__(
         self,
+        geocoder: NominatimGeocoder,
+        poi: OverpassPOI,
+        router: OSRMRouting | ORSRouting,
+        llm: OllamaLLMService,
         *,
         system_prompt: Optional[str] = None,
-        router_preference: Optional[str] = None,
-        ollama_url: Optional[str] = None,
-        llm_model: Optional[str] = None,
-        nominatim_url: Optional[str] = None,
-        overpass_url: Optional[str] = None,
-        ors_api_key: Optional[str] = None,
-        http_user_agent: Optional[str] = None,
     ):
+        self._geocoder = geocoder
+        self._poi = poi
+        self._router = router
+        self._llm = llm
         self.system_prompt = system_prompt or (
             "You are GeoCopilot. You receive a computed route with names and nearby POIs. "
             "Summarize the drive (distance/time/provider), notable via areas/POIs, and a few tips. English only."
         )
-        ollama_url = ollama_url or os.getenv("OLLAMA_URL", "http://localhost:11434")
-        llm_model  = llm_model  or os.getenv("LLM_MODEL", "llama3.1:8b")
-        nominatim_url = nominatim_url or os.getenv("NOMINATIM_URL", "https://nominatim.openstreetmap.org")
-        overpass_url  = overpass_url  or os.getenv("OVERPASS_URL",  "https://overpass-api.de/api/interpreter")
-        http_user_agent = http_user_agent or os.getenv("HTTP_USER_AGENT", "geo-copilot/1.0 (contact: you@example.com)")
-        ors_api_key = ors_api_key or os.getenv("ORS_API_KEY", "")
-        router_pref = (router_preference or os.getenv("ROUTER", "osrm")).lower()
-        headers = {"User-Agent": http_user_agent}
-
-        self._llm = OllamaLLMService(ollama_url, llm_model)
-        self._geocoder = NominatimGeocoder(nominatim_url, headers)
-        self._poi = OverpassPOI(overpass_url)
-        self._router = ORSRouting(ors_api_key) if router_pref == "ors" else OSRMRouting()
 
     @staticmethod
     def _bbox(points: List[LatLon]):
