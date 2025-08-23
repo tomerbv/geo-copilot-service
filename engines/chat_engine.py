@@ -13,14 +13,13 @@ class ChatEngine(BaseGeoCopilotEngine):
         self._geocoder = geocoder
         self._poi = poi
 
-    def _build_facts(self, loc: LatLon, user_prompt: str) -> Dict:
+    def _build_facts(self, loc: LatLon) -> Dict:
         lat, lon = loc
         return {
             "location": self._geocoder.reverse(lat, lon),
             "pois": self._poi.around(lat, lon, 30),
-            "user_prompt": user_prompt,
         }
 
     def run(self, loc: LatLon, user_prompt: str) -> str:
-        facts = self._build_facts(loc, user_prompt)
-        return self._generate(facts)
+        facts = self._build_facts(loc)
+        return self._generate(facts, user_prompt)

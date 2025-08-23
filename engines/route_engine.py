@@ -2,9 +2,9 @@ from typing import Tuple, Dict, List
 from services.llm import LLMService
 from services.geocoding import NominatimGeocoder
 from services.pois import OverpassPOI
-from services.routing import RoutingService  # ⬅ use interface
+from services.routing import RoutingService
 from engines.abstract_engine import BaseGeoCopilotEngine
-from config.config_loader import combined_rules  # ⬅ from new config
+from config.config_loader import combined_rules
 
 LatLon = Tuple[float, float]
 
@@ -31,7 +31,7 @@ class RouteEngine(BaseGeoCopilotEngine):
                 via.append(city); seen.add(city)
         return via
 
-    def _build_facts(self, start: LatLon, end: LatLon, user_prompt: str) -> Dict:
+    def _build_facts(self, start: LatLon, end: LatLon) -> Dict:
         s_rg = self._geocoder.reverse(*start)
         e_rg = self._geocoder.reverse(*end)
         route = self._router.route(start, end)
@@ -50,11 +50,10 @@ class RouteEngine(BaseGeoCopilotEngine):
             "provider": route["provider"],
             "via_summary": self._via_list(route["points"]),
             "pois": pois,
-            "user_prompt": user_prompt,
         }
 
     def run(self, start: LatLon, end: LatLon, user_prompt: str) -> str:
-        facts = self._build_facts(start, end, user_prompt)
+        facts = self._build_facts(start, end)
         if facts.get("error") == "no_route":
             return "No drivable route was found between the selected points."
-        return self._generate(facts)
+        return self._generate(facts, user_prompt)
