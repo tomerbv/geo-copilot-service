@@ -1,7 +1,10 @@
 import os, requests, polyline
-from typing import Optional, Tuple, Dict, List
+from typing import Optional, Tuple, Dict, List, Protocol
 
 LatLon = Tuple[float, float]
+
+class RoutingService(Protocol):
+    def route(self, start: LatLon, end: LatLon) -> Optional[Dict]: ...
 
 class OSRMRouting:
     def route(self, start: LatLon, end: LatLon) -> Optional[Dict]:

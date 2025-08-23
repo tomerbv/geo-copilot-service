@@ -1,27 +1,15 @@
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 from services.llm import LLMService
 from services.geocoding import NominatimGeocoder
 from services.pois import OverpassPOI
 from engines.abstract_engine import BaseGeoCopilotEngine
+from config.config_loader import combined_rules
 
 LatLon = Tuple[float, float]
 
 class ChatEngine(BaseGeoCopilotEngine):
-    def __init__(
-        self,
-        geocoder: NominatimGeocoder,
-        poi: OverpassPOI,
-        llm: LLMService,
-        *,
-        prompt_rules: list[str] | None = None,
-    ):
-        # Engine‑specific rules layered on top of base rules
-        engine_rules = [
-            "You receive a verified location and a small list of nearby POIs.",
-            "If the user did not specify a search radius, assume 3000 meters.",
-            "Summarize the area, notable POIs, and give a few practical tips.",
-        ]
-        super().__init__(llm, prompt_rules=(prompt_rules or []) + engine_rules)
+    def __init__(self, geocoder: NominatimGeocoder, poi: OverpassPOI, llm: LLMService):
+        super().__init__(llm, prompt_rules=combined_rules("chat"))
         self._geocoder = geocoder
         self._poi = poi
 

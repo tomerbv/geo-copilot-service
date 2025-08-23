@@ -1,33 +1,22 @@
-from typing import Tuple, Dict, List, Optional
+from typing import Tuple, Dict, List
 from services.llm import LLMService
 from services.geocoding import NominatimGeocoder
 from services.pois import OverpassPOI
-from services.routing import OSRMRouting, ORSRouting
+from services.routing import RoutingService  # ⬅ use interface
 from engines.abstract_engine import BaseGeoCopilotEngine
+from config.config_loader import combined_rules  # ⬅ from new config
 
 LatLon = Tuple[float, float]
 
 class RouteEngine(BaseGeoCopilotEngine):
-    def __init__(
-        self,
-        geocoder: NominatimGeocoder,
-        poi: OverpassPOI,
-        router: OSRMRouting | ORSRouting,
-        llm: LLMService,
-        *,
-        prompt_rules: list[str] | None = None,
-    ):
-        engine_rules = [
-            "You receive a computed driving route with via places and nearby POIs.",
-            "Summarize total distance/time and which provider was used.",
-            "Mention a few notable via areas/POIs and add practical driving tips.",
-        ]
-        super().__init__(llm, prompt_rules=(prompt_rules or []) + engine_rules)
+    def __init__(self, geocoder: NominatimGeocoder, poi: OverpassPOI, router: RoutingService, llm: LLMService):
+        super().__init__(llm, prompt_rules=combined_rules("route"))
         self._geocoder = geocoder
         self._poi = poi
         self._router = router
 
-    def _bbox(self, points: List[LatLon]):
+    @staticmethod
+    def _bbox(points: List[LatLon]):
         lats = [p[0] for p in points]; lons = [p[1] for p in points]
         return min(lats), min(lons), max(lats), max(lons)
 
