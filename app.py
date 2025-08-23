@@ -1,35 +1,32 @@
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from dotenv import load_dotenv
-from engines.llm_engine import chat_recommendation, route_recommendation
-
-load_dotenv()
+from engines.chat_engine import ChatEngine
+from engines.route_engine import RouteEngine
 
 app = Flask(__name__)
 CORS(app)
 
+chat_engine = ChatEngine()
+route_engine = RouteEngine()
+
 @app.post("/api/chat")
 def api_chat():
     data = request.get_json(force=True)
-    loc = data["location"]      # {lat, lon}
-    prompt = data.get("prompt", "")
+    loc = (data["location"]["lat"], data["location"]["lon"])
     radius_m = int(data.get("radius_m", 3000))
-
-    result = chat_recommendation(loc, prompt, radius_m=radius_m)
-    return jsonify({"summary": result})
+    txt = chat_engine.run(loc, radius_m, data.get("prompt", ""))
+    return jsonify({"summary": txt})
 
 @app.post("/api/route")
 def api_route():
     data = request.get_json(force=True)
-    start = data["start"]       # {lat, lon}
-    end = data["end"]           # {lat, lon}
-    prompt = data.get("prompt", "")
-
-    result = route_recommendation(start, end, prompt)
-    return jsonify({"summary": result})
+    start = (data["start"]["lat"], data["start"]["lon"])
+    end   = (data["end"]["lat"],   data["end"]["lon"])
+    txt = route_engine.run(start, end, data.get("prompt", ""))
+    return jsonify({"summary": txt})
 
 if __name__ == "__main__":
-    host = os.getenv("FLASK_HOST", "0.0.0.0")
-    port = int(os.getenv("FLASK_PORT", "8080"))
-    app.run(host=host, port=port, debug=True)
+    app.run(host=os.getenv("FLASK_HOST", "0.0.0.0"),
+            port=int(os.getenv("FLASK_PORT", "8080")),
+            debug=True)
