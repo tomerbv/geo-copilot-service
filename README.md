@@ -14,3 +14,11 @@ copy .env.example .env        # adjust if needed
 python app.py
 ```
 Service listens on `http://localhost:8080`.
+
+
+## Improvement:
+- add relevant apis for metadata
+- improve metadata framing for llm model 
+- add proper error handling
+- improve metadata services architecture design
+- return complex types (images / list of travel suggestions)
